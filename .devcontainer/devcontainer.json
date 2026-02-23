@@ -1,0 +1,28 @@
+{
+	"name": "CORBA",
+	"build": {
+		"dockerfile": "Containerfile",
+		"context": "."
+	},
+	// "runArgs": ["--network=host"],
+	"runArgs": ["--memory=4g"],
+	
+	"customizations": {
+		"vscode": {
+			"settings": {
+			},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker",
+				"vscjava.vscode-java-test",
+				"vscjava.vscode-java-dependency",
+				"vscjava.vscode-maven",
+				"redhat.java",
+				"vscjava.vscode-gradle",
+				"vscjava.vscode-java-pack",
+				"vscjava.vscode-java-debug"
+			]
+		}
+	},
+	"features": {
+	}
+}

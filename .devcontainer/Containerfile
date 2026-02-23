@@ -1,0 +1,13 @@
+FROM fedora:latest
+RUN sudo dnf update -y && dnf install -y git
+RUN sudo dnf install -y iputils iproute
+RUN groupadd -r vscode && useradd -m -s /bin/bash -g vscode vscode
+
+RUN sudo dnf install -y adoptium-temurin-java-repository
+RUN sudo fedora-third-party enable
+RUN sudo dnf install -y temurin-8-jdk.x86_64
+
+# java-1.8.0-openjdk-devel.x86_64
+
+USER vscode
+USER root
