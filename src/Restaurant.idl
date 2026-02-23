@@ -1,0 +1,63 @@
+module RestaurantApp
+{
+  struct MenuItem
+  {
+    string food;
+    unsigned short cost;
+  };
+
+  struct OrderItem
+  {
+    MenuItem item;
+    unsigned short quantity;
+  }
+
+  typedef sequence<MenuItem> MenuList;
+  typedef sequence<OrderItem> OrderList;
+  
+  struct Time
+  {
+    unsigned short hours;
+    unsigned short minutes;
+  }
+
+  struct Menu
+  {
+    unsigned short version;
+    MenuList menuList;
+  };
+
+  struct Order
+  {
+    unsigned short menuVersion;
+    OrderList orderList;
+    string userId;
+    Time time;
+  };
+
+  typedef sequence<Order> AdminOrdersList;
+
+
+  interface Menu_Int
+  {
+    Menu getMenu();
+  };
+  
+  interface Order_Int
+  {
+    boolean placeOrder(in Order order);
+    Order getOrder(in string userId);
+  };
+
+  interface Admin_Int
+  {
+    long getAdminKey(in string username, in string password);
+    boolean setMenu(in MenuList menu, long key);
+    AdminOrdersList getAllOrders(long key);
+  };
+
+  interface Hello
+  {
+  string sayHello();
+  };
+};
