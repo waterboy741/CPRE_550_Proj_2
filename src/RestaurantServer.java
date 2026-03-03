@@ -7,6 +7,23 @@ import org.omg.PortableServer.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+class DataStorage {
+
+  public RestaurantApp.Menu menu;
+  public ArrayList<RestaurantApp.Order> orders;
+
+  public DataStorage() {
+    MenuItem[] menuItems = {
+        new MenuItem("Burger", (short) 10),
+        new MenuItem("Fries", (short) 5),
+        new MenuItem("Cola", (short) 1)
+    };
+    menu = new Menu((short) 0, menuItems);
+    orders = new ArrayList<>();
+  }
+
+}
+
 class AdminImpl extends Admin_IntPOA {
   private ORB orb;
 
@@ -14,24 +31,23 @@ class AdminImpl extends Admin_IntPOA {
   private static final String adminPassword = "password";
   private static final int adminKey = 23409587;
 
-  private RestaurantServer serverBase;
+  private DataStorage storage;
 
   public void setORB(ORB orb_val) {
     orb = orb_val;
   }
 
-  public void setServer(RestaurantServer server) {
-    serverBase = server;
+  public void setDataStorage(DataStorage data) {
+    storage = data;
   }
 
   // implement getAdminKey() method
   public int getAdminKey(String username, String password) {
-
     if (username == null || password == null) {
       return -1;
     }
 
-    if (username == adminUserName && password == adminPassword) {
+    if (username.equals(adminUserName) && password.equals(adminPassword)) {
       return adminKey;
     } else {
       return -1;
@@ -45,7 +61,7 @@ class AdminImpl extends Admin_IntPOA {
     }
 
     if (key == adminKey) {
-      serverBase.menu = new RestaurantApp.Menu(serverBase.menu.version++, menu);
+      storage.menu = new RestaurantApp.Menu(++storage.menu.version, menu);
       return true;
     }
     return false;
@@ -53,7 +69,7 @@ class AdminImpl extends Admin_IntPOA {
 
   // implement getAllOrders() method
   public RestaurantApp.Order[] getAllOrders(int key) {
-    return serverBase.orders.toArray(new RestaurantApp.Order[0]);
+    return storage.orders.toArray(new RestaurantApp.Order[0]);
   }
 
   // implement getAllActiveOrders() method
@@ -68,7 +84,7 @@ class AdminImpl extends Admin_IntPOA {
         (short) currentTime.getHour(),
         (short) currentTime.getMinute());
 
-    for (Order order : serverBase.orders) {
+    for (Order order : storage.orders) {
       if (order.completionTime.year >= compareTime.year &&
           order.completionTime.month >= compareTime.month &&
           order.completionTime.day >= compareTime.day &&
@@ -84,26 +100,26 @@ class AdminImpl extends Admin_IntPOA {
 
 class MenuImpl extends Menu_IntPOA {
   private ORB orb;
-  private RestaurantServer serverBase;
+  private DataStorage storage;
 
   public void setORB(ORB orb_val) {
     orb = orb_val;
   }
 
-  public void setServer(RestaurantServer server) {
-    serverBase = server;
+  public void setDataStorage(DataStorage data) {
+    storage = data;
   }
 
   // implement getMenu() method
   public RestaurantApp.Menu getMenu() {
-    return serverBase.menu;
+    return storage.menu;
   }
 
 }
 
 class OrderImpl extends Order_IntPOA {
   private ORB orb;
-  private RestaurantServer serverBase;
+  private DataStorage storage;
 
   private static final short orderDuration = 5;
 
@@ -111,8 +127,8 @@ class OrderImpl extends Order_IntPOA {
     orb = orb_val;
   }
 
-  public void setServer(RestaurantServer server) {
-    serverBase = server;
+  public void setDataStorage(DataStorage data) {
+    storage = data;
   }
 
   // implement placeOrder() method
@@ -123,13 +139,13 @@ class OrderImpl extends Order_IntPOA {
     }
 
     // Verify that this was ordered on the correct menu version
-    if (order.menuVersion == serverBase.menu.version) {
+    if (order.menuVersion == storage.menu.version) {
 
       // Verify that the user calculated the total cost correctly
       int tempCost = 0;
       for (RestaurantApp.OrderItem orderItem : order.orderList) {
-        for (RestaurantApp.MenuItem menu_Item : serverBase.menu.menuList) {
-          if (orderItem.item.food == menu_Item.food) {
+        for (RestaurantApp.MenuItem menu_Item : storage.menu.menuList) {
+          if (orderItem.item.food.equals(menu_Item.food)) {
             tempCost += menu_Item.cost;
           }
         }
@@ -151,7 +167,7 @@ class OrderImpl extends Order_IntPOA {
             orderTime.hours,
             (short) (orderTime.minutes + orderDuration));
 
-        serverBase.orders.add(new RestaurantApp.Order(
+        storage.orders.add(new RestaurantApp.Order(
             order.menuVersion,
             order.orderList,
             order.userId,
@@ -168,9 +184,9 @@ class OrderImpl extends Order_IntPOA {
   // implement getActiveOrder() method
   public RestaurantApp.Order getActiveOrder(String userId) {
 
-    for (int i = serverBase.orders.size() - 1; i >= 0; i--) {
-      RestaurantApp.Order order = serverBase.orders.get(i);
-      if (order.userId == userId) {
+    for (int i = storage.orders.size() - 1; i >= 0; i--) {
+      RestaurantApp.Order order = storage.orders.get(i);
+      if (order.userId.equals(userId)) {
         return order;
       }
     }
@@ -181,8 +197,8 @@ class OrderImpl extends Order_IntPOA {
   public RestaurantApp.Order[] getPreviousOrders(String userId) {
     ArrayList<RestaurantApp.Order> orders = new ArrayList<RestaurantApp.Order>();
 
-    for (Order order : serverBase.orders) {
-      if (order.userId == userId) {
+    for (Order order : storage.orders) {
+      if (order.userId.equals(userId)) {
         orders.add(order);
       }
     }
@@ -193,12 +209,12 @@ class OrderImpl extends Order_IntPOA {
 
 public class RestaurantServer {
 
-  public RestaurantApp.Menu menu;
-  public ArrayList<RestaurantApp.Order> orders;
-
   public static void main(String args[]) {
 
     try {
+
+      DataStorage data = new DataStorage();
+
       // create and initialize the ORB
       ORB orb = ORB.init(args, null);
 
@@ -209,12 +225,15 @@ public class RestaurantServer {
       // create servants and register them with the ORB
       AdminImpl adminImpl = new AdminImpl();
       adminImpl.setORB(orb);
+      adminImpl.setDataStorage(data);
 
       MenuImpl menuImpl = new MenuImpl();
       menuImpl.setORB(orb);
+      menuImpl.setDataStorage(data);
 
       OrderImpl orderImpl = new OrderImpl();
       orderImpl.setORB(orb);
+      orderImpl.setDataStorage(data);
 
       // get object reference from the servant
       org.omg.CORBA.Object adminRef = rootpoa.servant_to_reference(adminImpl);

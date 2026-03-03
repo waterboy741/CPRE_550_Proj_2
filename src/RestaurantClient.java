@@ -28,9 +28,25 @@ public class RestaurantClient {
       menuImpl = Menu_IntHelper.narrow(ncRef.resolve_str(menuName));
       orderImpl = Order_IntHelper.narrow(ncRef.resolve_str(orderName));
 
-      System.out.println(adminImpl.getAdminKey("a", "b"));
-      System.out.println(adminImpl.setMenu(new RestaurantApp.MenuItem[0], adminImpl.getAdminKey("a", "b")));
-      System.out.println(orderImpl.placeOrder(new RestaurantApp.Order()));
+      // ==================================================================
+
+      // System.out.println(adminImpl.getAdminKey("admin", "password"));
+      // System.out.println(menuImpl.getMenu() == null);
+      // System.out.println(orderImpl.placeOrder(new RestaurantApp.Order()));
+
+      RestaurantApp.Menu menu = menuImpl.getMenu();
+      System.out.println("Initial Version");
+      System.out.println(menu.version);
+      for (RestaurantApp.MenuItem item : menu.menuList) {
+        System.out.println(item.food);
+        System.out.println(item.cost);
+      }
+
+      System.out.println(adminImpl.setMenu(menu.menuList, adminImpl.getAdminKey("admin", "password")));
+      System.out.println("New Version");
+      System.out.println(menuImpl.getMenu().version);
+
+      // ==================================================================
 
     } catch (Exception e) {
       System.out.println("ERROR : " + e);
