@@ -4,81 +4,200 @@ import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Properties;
-
-class HelloImpl extends HelloPOA {
-  private ORB orb;
-
-  public void setORB(ORB orb_val) {
-    orb = orb_val;
-  }
-
-  // implement sayHello() method
-  public String sayHello() {
-    return "\nHello world !!\n";
-  }
-}
 
 class AdminImpl extends Admin_IntPOA {
   private ORB orb;
 
+  private static final String adminUserName = "admin";
+  private static final String adminPassword = "password";
+  private static final int adminKey = 23409587;
+
+  private RestaurantServer serverBase;
+
   public void setORB(ORB orb_val) {
     orb = orb_val;
   }
 
+  public void setServer(RestaurantServer server) {
+    serverBase = server;
+  }
+
   // implement getAdminKey() method
   public int getAdminKey(String username, String password) {
-    return 1333;
+
+    if (username == null || password == null) {
+      return -1;
+    }
+
+    if (username == adminUserName && password == adminPassword) {
+      return adminKey;
+    } else {
+      return -1;
+    }
   }
 
   // implement setMenu() method
   public boolean setMenu(RestaurantApp.MenuItem[] menu, int key) {
+    if (menu == null) {
+      return false;
+    }
+
+    if (key == adminKey) {
+      serverBase.menu = new RestaurantApp.Menu(serverBase.menu.version++, menu);
+      return true;
+    }
     return false;
   }
 
   // implement getAllOrders() method
   public RestaurantApp.Order[] getAllOrders(int key) {
-    return new ArrayList<RestaurantApp.Order>().toArray(new RestaurantApp.Order[0]);
+    return serverBase.orders.toArray(new RestaurantApp.Order[0]);
   }
+
+  // implement getAllActiveOrders() method
+  public RestaurantApp.Order[] getAllActiveOrders(int key) {
+    ArrayList<RestaurantApp.Order> orders = new ArrayList<RestaurantApp.Order>();
+
+    LocalDateTime currentTime = LocalDateTime.now();
+    RestaurantApp.Time compareTime = new RestaurantApp.Time(
+        (short) currentTime.getYear(),
+        (short) currentTime.getMonthValue(),
+        (short) currentTime.getDayOfMonth(),
+        (short) currentTime.getHour(),
+        (short) currentTime.getMinute());
+
+    for (Order order : serverBase.orders) {
+      if (order.completionTime.year >= compareTime.year &&
+          order.completionTime.month >= compareTime.month &&
+          order.completionTime.day >= compareTime.day &&
+          order.completionTime.hours >= compareTime.hours &&
+          order.completionTime.minutes >= compareTime.minutes) {
+        orders.add(order);
+      }
+    }
+    return orders.toArray(new RestaurantApp.Order[0]);
+  }
+
 }
 
 class MenuImpl extends Menu_IntPOA {
   private ORB orb;
+  private RestaurantServer serverBase;
 
   public void setORB(ORB orb_val) {
     orb = orb_val;
   }
 
+  public void setServer(RestaurantServer server) {
+    serverBase = server;
+  }
+
   // implement getMenu() method
   public RestaurantApp.Menu getMenu() {
-    return new Menu();
+    return serverBase.menu;
   }
 
 }
 
 class OrderImpl extends Order_IntPOA {
   private ORB orb;
+  private RestaurantServer serverBase;
+
+  private static final short orderDuration = 5;
 
   public void setORB(ORB orb_val) {
     orb = orb_val;
   }
 
-  // implement placeOrder() method
-  public boolean placeOrder(RestaurantApp.Order order) {
-    return true;
+  public void setServer(RestaurantServer server) {
+    serverBase = server;
   }
 
-  // implement getOrder() method
-  public RestaurantApp.Order getOrder(String userId) {
-    return new RestaurantApp.Order();
+  // implement placeOrder() method
+  public boolean placeOrder(RestaurantApp.Order order) {
+
+    if (order == null) {
+      return false;
+    }
+
+    // Verify that this was ordered on the correct menu version
+    if (order.menuVersion == serverBase.menu.version) {
+
+      // Verify that the user calculated the total cost correctly
+      int tempCost = 0;
+      for (RestaurantApp.OrderItem orderItem : order.orderList) {
+        for (RestaurantApp.MenuItem menu_Item : serverBase.menu.menuList) {
+          if (orderItem.item.food == menu_Item.food) {
+            tempCost += menu_Item.cost;
+          }
+        }
+      }
+
+      if (tempCost == order.totalCost) {
+        LocalDateTime currentTime = LocalDateTime.now();
+        RestaurantApp.Time orderTime = new RestaurantApp.Time(
+            (short) currentTime.getYear(),
+            (short) currentTime.getMonthValue(),
+            (short) currentTime.getDayOfMonth(),
+            (short) currentTime.getHour(),
+            (short) currentTime.getMinute());
+
+        RestaurantApp.Time completionTime = new RestaurantApp.Time(
+            orderTime.year,
+            orderTime.month,
+            orderTime.day,
+            orderTime.hours,
+            (short) (orderTime.minutes + orderDuration));
+
+        serverBase.orders.add(new RestaurantApp.Order(
+            order.menuVersion,
+            order.orderList,
+            order.userId,
+            order.totalCost,
+            orderTime,
+            completionTime));
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // implement getActiveOrder() method
+  public RestaurantApp.Order getActiveOrder(String userId) {
+
+    for (int i = serverBase.orders.size() - 1; i >= 0; i--) {
+      RestaurantApp.Order order = serverBase.orders.get(i);
+      if (order.userId == userId) {
+        return order;
+      }
+    }
+    return null;
+  }
+
+  // implement getPreviousOrders() method
+  public RestaurantApp.Order[] getPreviousOrders(String userId) {
+    ArrayList<RestaurantApp.Order> orders = new ArrayList<RestaurantApp.Order>();
+
+    for (Order order : serverBase.orders) {
+      if (order.userId == userId) {
+        orders.add(order);
+      }
+    }
+    return orders.toArray(new RestaurantApp.Order[0]);
   }
 
 }
 
 public class RestaurantServer {
 
+  public RestaurantApp.Menu menu;
+  public ArrayList<RestaurantApp.Order> orders;
+
   public static void main(String args[]) {
+
     try {
       // create and initialize the ORB
       ORB orb = ORB.init(args, null);
@@ -88,9 +207,6 @@ public class RestaurantServer {
       rootpoa.the_POAManager().activate();
 
       // create servants and register them with the ORB
-      HelloImpl helloImpl = new HelloImpl();
-      helloImpl.setORB(orb);
-
       AdminImpl adminImpl = new AdminImpl();
       adminImpl.setORB(orb);
 
@@ -99,10 +215,6 @@ public class RestaurantServer {
 
       OrderImpl orderImpl = new OrderImpl();
       orderImpl.setORB(orb);
-
-      // get object reference from the servant
-      org.omg.CORBA.Object helloRef = rootpoa.servant_to_reference(helloImpl);
-      Hello href = HelloHelper.narrow(helloRef);
 
       // get object reference from the servant
       org.omg.CORBA.Object adminRef = rootpoa.servant_to_reference(adminImpl);
@@ -124,17 +236,14 @@ public class RestaurantServer {
       NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
 
       // bind the Object Reference in Naming
-      String helloName = "Hello";
       String adminName = "Admin_Int";
       String menuName = "Menu_Int";
       String orderName = "Order_Int";
 
-      NameComponent hpath[] = ncRef.to_name(helloName);
       NameComponent apath[] = ncRef.to_name(adminName);
       NameComponent mpath[] = ncRef.to_name(menuName);
       NameComponent opath[] = ncRef.to_name(orderName);
 
-      ncRef.rebind(hpath, href);
       ncRef.rebind(apath, aref);
       ncRef.rebind(mpath, mref);
       ncRef.rebind(opath, oref);

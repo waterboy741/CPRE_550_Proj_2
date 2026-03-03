@@ -17,6 +17,9 @@ module RestaurantApp
   
   struct Time
   {
+    unsigned short year;
+    unsigned short month;
+    unsigned short day;
     unsigned short hours;
     unsigned short minutes;
   };
@@ -33,10 +36,11 @@ module RestaurantApp
     OrderList orderList;
     string userId;
     unsigned short totalCost;
-    Time time;
+    Time orderTime;
+    Time completionTime;
   };
 
-  typedef sequence<Order> AdminOrdersList;
+  typedef sequence<Order> OrdersList;
 
 
   interface Menu_Int
@@ -47,18 +51,15 @@ module RestaurantApp
   interface Order_Int
   {
     boolean placeOrder(in Order order);
-    Order getOrder(in string userId);
+    Order getActiveOrder(in string userId);
+    OrdersList getPreviousOrders(in string userId);
   };
 
   interface Admin_Int
   {
     long getAdminKey(in string username, in string password);
     boolean setMenu(in MenuList menu, in long key);
-    AdminOrdersList getAllOrders(in long key);
-  };
-
-  interface Hello
-  {
-  string sayHello();
+    OrdersList getAllOrders(in long key);
+    OrdersList getAllActiveOrders(in long key);
   };
 };
