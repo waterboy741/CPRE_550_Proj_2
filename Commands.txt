@@ -1,0 +1,5 @@
+idlj -fall Restaurant.idl
+javac *.java RestaurantApp/*.java
+orbd -ORBInitialPort 1050
+java RestaurantServer -ORBInitialPort 1050 -ORBInitialHost localhost
+java RestaurantClient -ORBInitialPort 1050 -ORBInitialHost localhost

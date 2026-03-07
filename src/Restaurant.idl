@@ -62,4 +62,7 @@ module RestaurantApp
     OrdersList getAllOrders(in long key);
     OrdersList getAllActiveOrders(in long key);
   };
+
+  exception Incorrect_Password{};
+  exception Incorrect_Key{};
 };
