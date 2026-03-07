@@ -3,20 +3,26 @@ import org.omg.CosNaming.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import java.awt.*;
+import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import org.omg.CORBA.*;
 
@@ -25,8 +31,11 @@ public class RestaurantClient {
   static Menu_Int menuImpl;
   static Order_Int orderImpl;
   static JFrame frame;
-  static String user_name;
+  static String username;
   static long adminKey;
+  static short menuVersion;
+
+  static DefaultListModel<RestaurantApp.OrderItem> clientMenuListModel;
 
   public static void main(String args[]) {
     try {
@@ -218,7 +227,6 @@ public class RestaurantClient {
     Login_First_Field.setMaximumSize(new Dimension(Integer.MAX_VALUE, Login_First_Field.getPreferredSize().height));
     Login_Last_Field.setMaximumSize(new Dimension(Integer.MAX_VALUE, Login_Last_Field.getPreferredSize().height));
 
-    // Add action to the button
     Login_Button.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -263,7 +271,6 @@ public class RestaurantClient {
     Login_Password_Field
         .setMaximumSize(new Dimension(Integer.MAX_VALUE, Login_Password_Field.getPreferredSize().height));
 
-    // Add action to the button
     Login_Button.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -296,6 +303,174 @@ public class RestaurantClient {
 
   public static void setClientMenuPage() {
 
+    try {
+
+      RestaurantApp.Menu menu = menuImpl.getMenu();
+      menuVersion = menu.version;
+
+      JList<RestaurantApp.MenuItem> menuList = new JList<>(menu.menuList);
+      menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
+      JScrollPane menuScrollPane = new JScrollPane(menuList);
+
+      clientMenuListModel = new DefaultListModel<>();
+      JList<RestaurantApp.OrderItem> menuOrderList = new JList<>(clientMenuListModel);
+      menuOrderList.setCellRenderer(new RestaurantClient().new orderItemRenderer());
+      JScrollPane orderScrollPane = new JScrollPane(menuOrderList);
+
+      JLabel Quantity_Label = new JLabel("1");
+      Quantity_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JButton Up_Button = new JButton("^");
+      JButton Down_Button = new JButton("v");
+      Up_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+      Down_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      Up_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          int quantity = Integer.parseInt(Quantity_Label.getText());
+          if (quantity < 10) {
+            quantity++;
+          }
+          Quantity_Label.setText("" + quantity);
+        }
+      });
+
+      Down_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          int quantity = Integer.parseInt(Quantity_Label.getText());
+          if (quantity > 0) {
+            quantity--;
+          }
+          Quantity_Label.setText("" + quantity);
+        }
+      });
+
+      JPanel Up_Down_Panel = new JPanel();
+
+      Up_Down_Panel.setLayout(new BoxLayout(Up_Down_Panel, BoxLayout.Y_AXIS));
+      Up_Down_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Up_Down_Panel.add(Up_Button);
+      Up_Down_Panel.add(Down_Button);
+      Up_Down_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JLabel Cost_Label = new JLabel("Total Cost: $");
+
+      JButton Add_Button = new JButton("Add");
+      JButton Remove_Button = new JButton("Remove");
+      Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+      Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      Add_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
+          if (menuItem != null) {
+            RestaurantApp.OrderItem orderItem = new RestaurantApp.OrderItem(menuItem,
+                (short) Integer.parseInt(Quantity_Label.getText()));
+            clientMenuListModel.addElement(orderItem);
+
+            int cost = 0;
+            for (int i = 0; i < clientMenuListModel.size(); i++) {
+              cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
+            }
+            Cost_Label.setText("Total Cost: $" + cost);
+          }
+        }
+      });
+
+      Remove_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          RestaurantApp.OrderItem orderItem = menuOrderList.getSelectedValue();
+          if (orderItem != null) {
+            clientMenuListModel.removeElement(orderItem);
+
+            int cost = 0;
+            for (int i = 0; i < clientMenuListModel.size(); i++) {
+              cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
+            }
+            Cost_Label.setText("Total Cost: $" + cost);
+          }
+        }
+      });
+
+      JPanel Add_Remove_Panel = new JPanel();
+
+      Add_Remove_Panel.setLayout(new BoxLayout(Add_Remove_Panel, BoxLayout.Y_AXIS));
+      Add_Remove_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Add_Remove_Panel.add(Add_Button);
+      Add_Remove_Panel.add(Remove_Button);
+      Add_Remove_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JPanel Order_Creation_Panel = new JPanel();
+      Order_Creation_Panel.setLayout(new BoxLayout(Order_Creation_Panel, BoxLayout.X_AXIS));
+      Order_Creation_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Order_Creation_Panel.add(Up_Down_Panel);
+      Order_Creation_Panel.add(Quantity_Label);
+      Order_Creation_Panel.add(Add_Remove_Panel);
+      Order_Creation_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JButton Order_Button = new JButton("Order");
+
+      Order_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          try {
+            ArrayList<RestaurantApp.OrderItem> list = new ArrayList<>();
+            int cost = 0;
+            for (int i = 0; i < clientMenuListModel.size(); i++) {
+              RestaurantApp.OrderItem item = clientMenuListModel.getElementAt(i);
+              list.add(item);
+              cost += (item.item.cost * item.quantity);
+            }
+
+            RestaurantApp.Time currentTime = new RestaurantApp.Time();
+            RestaurantApp.Time finishTime = new RestaurantApp.Time();
+
+            RestaurantApp.Order order = new RestaurantApp.Order(menuVersion,
+                list.toArray(new RestaurantApp.OrderItem[0]),
+                username, (short) cost,
+                currentTime,
+                finishTime);
+
+            orderImpl.placeOrder(order);
+          } catch (Empty_Order e) {
+            JOptionPane.showMessageDialog(frame, "We cannot accept an empty order please select some items.");
+          } catch (Menu_Too_Old f) {
+            JOptionPane.showMessageDialog(frame, "Our Menu has changed please refresh your menu and reorder.");
+          } catch (Incorrect_Order_Total g) {
+            JOptionPane.showMessageDialog(frame,
+                "There was an issue calculating your total. Canceling transaction please try again.");
+          }
+        }
+      });
+
+      JPanel Order_Panel = new JPanel();
+      Order_Panel.setLayout(new BoxLayout(Order_Panel, BoxLayout.Y_AXIS));
+      Order_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Order_Panel.add(orderScrollPane);
+      Order_Panel.add(Order_Creation_Panel);
+      Order_Panel.add(Cost_Label);
+      Order_Panel.add(Order_Button);
+
+      JPanel Client_Menu_Panel = new JPanel();
+      Client_Menu_Panel.setLayout(new BoxLayout(Client_Menu_Panel, BoxLayout.X_AXIS));
+      Client_Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Client_Menu_Panel.add(menuScrollPane);
+      Client_Menu_Panel.add(Order_Panel);
+
+      removeAllPanels();
+      frame.add(Client_Menu_Panel);
+      frame.setSize(Client_Menu_Panel.getPreferredSize());
+      frame.revalidate();
+      frame.repaint();
+
+    } catch (No_Menu_Set e) {
+      JOptionPane.showMessageDialog(frame, "No Menu has been set yet please contact the General Manager");
+    }
+
   }
 
   public static void setAdminMenuPage() {
@@ -304,7 +479,7 @@ public class RestaurantClient {
 
   public static void ClientLogin(String name) {
     if (name != null && !name.isEmpty()) {
-      user_name = name;
+      username = name;
       createClientMenu();
       setClientOrderPage();
     } else {
@@ -322,4 +497,105 @@ public class RestaurantClient {
     }
   }
 
+  public static String timeToString(RestaurantApp.Time time) {
+    return "" + time.month + "/" + time.day + "/" + time.year + " " + time.hours + ":" + time.minutes;
+  }
+
+  class menuItemRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<?> list,
+        java.lang.Object value,
+        int index,
+        boolean isSelected,
+        boolean cellHasFocus) {
+
+      super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+      if (value instanceof RestaurantApp.MenuItem) {
+        RestaurantApp.MenuItem item = (RestaurantApp.MenuItem) value;
+        setText(item.food + ":          $" + item.cost);
+      }
+
+      this.setHorizontalAlignment(JLabel.RIGHT);
+
+      return this;
+    }
+  }
+
+  class orderItemRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<?> list,
+        java.lang.Object value,
+        int index,
+        boolean isSelected,
+        boolean cellHasFocus) {
+
+      super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+      if (value instanceof RestaurantApp.OrderItem) {
+        RestaurantApp.OrderItem item = (RestaurantApp.OrderItem) value;
+        setText(item.item.food + ":          $" + item.item.cost + " x " + item.quantity + " = "
+            + (item.item.cost * item.quantity));
+      }
+
+      this.setHorizontalAlignment(JLabel.RIGHT);
+
+      return this;
+    }
+  }
+
+  class ClientOrderRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<?> list,
+        java.lang.Object value,
+        int index,
+        boolean isSelected,
+        boolean cellHasFocus) {
+
+      super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+      if (value instanceof RestaurantApp.Order) {
+        RestaurantApp.Order order = (RestaurantApp.Order) value;
+
+        String ret = "Order Time: " + timeToString(order.orderTime) + "\n";
+        ret += "Completion Time: " + timeToString(order.completionTime) + "\n";
+        ret += "Total Cost: $" + order.totalCost + "\n";
+        for (RestaurantApp.OrderItem orderItem : order.orderList) {
+          ret += orderItem.quantity + " " + orderItem.item.food;
+        }
+        setText(ret);
+      }
+      return this;
+    }
+  }
+
+  class AdminOrderRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<?> list,
+        java.lang.Object value,
+        int index,
+        boolean isSelected,
+        boolean cellHasFocus) {
+
+      super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+      if (value instanceof RestaurantApp.Order) {
+        RestaurantApp.Order order = (RestaurantApp.Order) value;
+
+        String ret = order.userId + "\n";
+        ret += "Order Time: " + timeToString(order.orderTime) + "\n";
+        ret += "Completion Time: " + timeToString(order.completionTime) + "\n";
+        ret += "Total Cost: $" + order.totalCost + "\n";
+        for (RestaurantApp.OrderItem orderItem : order.orderList) {
+          ret += orderItem.quantity + " " + orderItem.item.food;
+        }
+        setText(ret);
+      }
+      return this;
+    }
+  }
 }

@@ -2,6 +2,12 @@ module RestaurantApp
 {
   exception Incorrect_Password{};
   exception Incorrect_Key{};
+
+  exception No_Menu_Set{};
+
+  exception Empty_Order{};
+  exception Menu_Too_Old{};
+  exception Incorrect_Order_Total{};
   
   struct MenuItem
   {
@@ -48,12 +54,12 @@ module RestaurantApp
 
   interface Menu_Int
   {
-    Menu getMenu();
+    Menu getMenu() raises (No_Menu_Set);
   };
   
   interface Order_Int
   {
-    boolean placeOrder(in Order order);
+    boolean placeOrder(in Order order) raises (Empty_Order, Menu_Too_Old, Incorrect_Order_Total);
     Order getActiveOrder(in string userId);
     OrdersList getPreviousOrders(in string userId);
   };

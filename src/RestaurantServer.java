@@ -111,7 +111,11 @@ class MenuImpl extends Menu_IntPOA {
   }
 
   // implement getMenu() method
-  public RestaurantApp.Menu getMenu() {
+  public RestaurantApp.Menu getMenu() throws No_Menu_Set {
+    if (storage == null || storage.menu == null || storage.menu.menuList == null) {
+      throw new No_Menu_Set();
+    }
+
     return storage.menu;
   }
 
@@ -132,17 +136,19 @@ class OrderImpl extends Order_IntPOA {
   }
 
   // implement placeOrder() method
-  public boolean placeOrder(RestaurantApp.Order order) {
+  public boolean placeOrder(RestaurantApp.Order order) throws Empty_Order, Menu_Too_Old, Incorrect_Order_Total {
 
     if (order == null) {
-      return false;
+      throw new Empty_Order();
+    } else if (order.orderList.length == 0) {
+      throw new Empty_Order();
     }
 
+    int tempCost = 0;
     // Verify that this was ordered on the correct menu version
     if (order.menuVersion == storage.menu.version) {
 
-      // Verify that the user calculated the total cost correctly
-      int tempCost = 0;
+      // Verify that the user calculated the total cost correctl
       for (RestaurantApp.OrderItem orderItem : order.orderList) {
         for (RestaurantApp.MenuItem menu_Item : storage.menu.menuList) {
           if (orderItem.item.food.equals(menu_Item.food)) {
@@ -150,35 +156,36 @@ class OrderImpl extends Order_IntPOA {
           }
         }
       }
-
-      if (tempCost == order.totalCost) {
-        LocalDateTime currentTime = LocalDateTime.now();
-        RestaurantApp.Time orderTime = new RestaurantApp.Time(
-            (short) currentTime.getYear(),
-            (short) currentTime.getMonthValue(),
-            (short) currentTime.getDayOfMonth(),
-            (short) currentTime.getHour(),
-            (short) currentTime.getMinute());
-
-        RestaurantApp.Time completionTime = new RestaurantApp.Time(
-            orderTime.year,
-            orderTime.month,
-            orderTime.day,
-            orderTime.hours,
-            (short) (orderTime.minutes + orderDuration));
-
-        storage.orders.add(new RestaurantApp.Order(
-            order.menuVersion,
-            order.orderList,
-            order.userId,
-            order.totalCost,
-            orderTime,
-            completionTime));
-        return true;
-      }
+    } else {
+      throw new Menu_Too_Old();
     }
+    if (tempCost == order.totalCost) {
+      LocalDateTime currentTime = LocalDateTime.now();
+      RestaurantApp.Time orderTime = new RestaurantApp.Time(
+          (short) currentTime.getYear(),
+          (short) currentTime.getMonthValue(),
+          (short) currentTime.getDayOfMonth(),
+          (short) currentTime.getHour(),
+          (short) currentTime.getMinute());
 
-    return false;
+      RestaurantApp.Time completionTime = new RestaurantApp.Time(
+          orderTime.year,
+          orderTime.month,
+          orderTime.day,
+          orderTime.hours,
+          (short) (orderTime.minutes + orderDuration));
+
+      storage.orders.add(new RestaurantApp.Order(
+          order.menuVersion,
+          order.orderList,
+          order.userId,
+          order.totalCost,
+          orderTime,
+          completionTime));
+      return true;
+    } else {
+      throw new Incorrect_Order_Total();
+    }
   }
 
   // implement getActiveOrder() method
