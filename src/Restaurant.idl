@@ -1,5 +1,8 @@
 module RestaurantApp
 {
+  exception Incorrect_Password{};
+  exception Incorrect_Key{};
+  
   struct MenuItem
   {
     string food;
@@ -57,12 +60,11 @@ module RestaurantApp
 
   interface Admin_Int
   {
-    long getAdminKey(in string username, in string password);
-    boolean setMenu(in MenuList menu, in long key);
-    OrdersList getAllOrders(in long key);
-    OrdersList getAllActiveOrders(in long key);
+    long getAdminKey(in string username, in string password) raises (Incorrect_Password);
+    boolean setMenu(in MenuList menu, in long key) raises (Incorrect_Key);
+    OrdersList getAllOrders(in long key) raises (Incorrect_Key);
+    OrdersList getAllActiveOrders(in long key) raises (Incorrect_Key);
   };
 
-  exception Incorrect_Password{};
-  exception Incorrect_Key{};
+  
 };

@@ -26,6 +26,7 @@ public class RestaurantClient {
   static Order_Int orderImpl;
   static JFrame frame;
   static String user_name;
+  static long adminKey;
 
   public static void main(String args[]) {
     try {
@@ -107,17 +108,18 @@ public class RestaurantClient {
 
   public static void createMenuBar() {
     JMenuBar menuBar = new JMenuBar();
-    JMenu adminMenu = new JMenu("Login");
+    JMenu menu = new JMenu("Login");
     JMenuItem adminItem = new JMenuItem("Admin");
     JMenuItem clientItem = new JMenuItem("Client");
-    adminMenu.add(clientItem);
-    adminMenu.addSeparator();
-    adminMenu.add(adminItem);
-    menuBar.add(adminMenu);
+    menu.add(clientItem);
+    menu.addSeparator();
+    menu.add(adminItem);
+    menuBar.add(menu);
 
     adminItem.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
+        cleanMenuBar();
         setAdminLoginPage();
       }
     });
@@ -125,11 +127,75 @@ public class RestaurantClient {
     clientItem.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
+        cleanMenuBar();
         setLoginPage();
       }
     });
 
     frame.setJMenuBar(menuBar);
+  }
+
+  public static void cleanMenuBar() {
+    JMenuBar menuBar = frame.getJMenuBar();
+    for (int i = menuBar.getMenuCount() - 1; i > 0; i--) {
+      menuBar.remove(i);
+    }
+    frame.revalidate();
+    frame.repaint();
+  }
+
+  public static void createClientMenu() {
+    JMenu clientMenu = new JMenu("Client");
+    JMenuItem orderItem = new JMenuItem("Orders");
+    JMenuItem menuItem = new JMenuItem("Menu");
+    clientMenu.add(orderItem);
+    clientMenu.addSeparator();
+    clientMenu.add(menuItem);
+    frame.getJMenuBar().add(clientMenu);
+
+    frame.revalidate();
+    frame.repaint();
+
+    orderItem.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        setClientOrderPage();
+      }
+    });
+
+    menuItem.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        setClientMenuPage();
+      }
+    });
+  }
+
+  public static void createAdminMenu() {
+    JMenu adminMenu = new JMenu("Admin");
+    JMenuItem orderItem = new JMenuItem("Orders");
+    JMenuItem menuItem = new JMenuItem("Menu");
+    adminMenu.add(orderItem);
+    adminMenu.addSeparator();
+    adminMenu.add(menuItem);
+    frame.getJMenuBar().add(adminMenu);
+
+    frame.revalidate();
+    frame.repaint();
+
+    orderItem.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        setAdminOrderPage();
+      }
+    });
+
+    menuItem.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        setAdminMenuPage();
+      }
+    });
   }
 
   public static void setLoginPage() {
@@ -171,6 +237,8 @@ public class RestaurantClient {
     removeAllPanels();
     frame.add(Login_Panel);
     frame.setSize(Login_Panel.getPreferredSize());
+    frame.revalidate();
+    frame.repaint();
   }
 
   public static void setAdminLoginPage() {
@@ -199,7 +267,7 @@ public class RestaurantClient {
     Login_Button.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        ClientLogin(Login_Username_Field.getText().trim() + new String(Login_Password_Field.getPassword()).trim());
+        AdminLogin(Login_Username_Field.getText().trim(), new String(Login_Password_Field.getPassword()).trim());
       }
     });
 
@@ -214,27 +282,43 @@ public class RestaurantClient {
     removeAllPanels();
     frame.add(Admin_Login_Panel);
     frame.setSize(Admin_Login_Panel.getPreferredSize());
+    frame.revalidate();
+    frame.repaint();
   }
 
   public static void setClientOrderPage() {
 
   }
 
+  public static void setAdminOrderPage() {
+
+  }
+
+  public static void setClientMenuPage() {
+
+  }
+
+  public static void setAdminMenuPage() {
+
+  }
+
   public static void ClientLogin(String name) {
-    if (name != null && !name.isEmpty() && name.trim().equals("")) {
-      System.out.println(name);
+    if (name != null && !name.isEmpty()) {
       user_name = name;
+      createClientMenu();
       setClientOrderPage();
     } else {
       JOptionPane.showMessageDialog(frame, "Invalid name entered. Please try again.");
     }
   }
 
-  public static void ClientLogin(String username, String password) {
+  public static void AdminLogin(String username, String password) {
     try {
-
-    } catch (Exception e) {
-      // TODO: handle exception
+      adminKey = adminImpl.getAdminKey(username, password);
+      createAdminMenu();
+      setAdminOrderPage();
+    } catch (Incorrect_Password e) {
+      JOptionPane.showMessageDialog(frame, "Incorrect Username / Password. Please try again.");
     }
   }
 

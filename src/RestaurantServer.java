@@ -42,20 +42,20 @@ class AdminImpl extends Admin_IntPOA {
   }
 
   // implement getAdminKey() method
-  public int getAdminKey(String username, String password) {
+  public int getAdminKey(String username, String password) throws Incorrect_Password {
     if (username == null || password == null) {
-      return -1;
+      throw new Incorrect_Password();
     }
 
     if (username.equals(adminUserName) && password.equals(adminPassword)) {
       return adminKey;
     } else {
-      return -1;
+      throw new Incorrect_Password();
     }
   }
 
   // implement setMenu() method
-  public boolean setMenu(RestaurantApp.MenuItem[] menu, int key) {
+  public boolean setMenu(RestaurantApp.MenuItem[] menu, int key) throws Incorrect_Key {
     if (menu == null) {
       return false;
     }
@@ -68,12 +68,12 @@ class AdminImpl extends Admin_IntPOA {
   }
 
   // implement getAllOrders() method
-  public RestaurantApp.Order[] getAllOrders(int key) {
+  public RestaurantApp.Order[] getAllOrders(int key) throws Incorrect_Key {
     return storage.orders.toArray(new RestaurantApp.Order[0]);
   }
 
   // implement getAllActiveOrders() method
-  public RestaurantApp.Order[] getAllActiveOrders(int key) {
+  public RestaurantApp.Order[] getAllActiveOrders(int key) throws Incorrect_Key {
     ArrayList<RestaurantApp.Order> orders = new ArrayList<RestaurantApp.Order>();
 
     LocalDateTime currentTime = LocalDateTime.now();
