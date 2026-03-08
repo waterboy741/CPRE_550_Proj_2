@@ -8,7 +8,11 @@ module RestaurantApp
   exception Empty_Order{};
   exception Menu_Too_Old{};
   exception Incorrect_Order_Total{};
+  exception Order_In_Progess{};
+
+  exception No_Active_Order{};
   
+
   struct MenuItem
   {
     string food;
@@ -59,8 +63,8 @@ module RestaurantApp
   
   interface Order_Int
   {
-    boolean placeOrder(in Order order) raises (Empty_Order, Menu_Too_Old, Incorrect_Order_Total);
-    Order getActiveOrder(in string userId);
+    boolean placeOrder(in Order order) raises (Empty_Order, Menu_Too_Old, Incorrect_Order_Total, Order_In_Progess);
+    Order getActiveOrder(in string userId) raises (No_Active_Order);
     OrdersList getPreviousOrders(in string userId);
   };
 

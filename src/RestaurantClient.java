@@ -23,6 +23,8 @@ import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 import org.omg.CORBA.*;
 
@@ -32,7 +34,7 @@ public class RestaurantClient {
   static Order_Int orderImpl;
   static JFrame frame;
   static String username;
-  static long adminKey;
+  static int adminKey;
   static short menuVersion;
 
   static DefaultListModel<RestaurantApp.OrderItem> clientMenuListModel;
@@ -62,6 +64,7 @@ public class RestaurantClient {
       // Create the main frame
       frame = new JFrame("Will's Resturnat");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      frame.setMaximumSize(new Dimension(1920 / 2, 1080 / 2));
       frame.setSize(800, 600);
 
       setLoginPage();
@@ -295,9 +298,141 @@ public class RestaurantClient {
 
   public static void setClientOrderPage() {
 
+    RestaurantApp.Order activeOrder;
+    int divisor;
+
+    try {
+      activeOrder = orderImpl.getActiveOrder(username);
+    } catch (No_Active_Order noActiveOrderException) {
+      activeOrder = null;
+    }
+
+    ArrayList<RestaurantApp.Order> allOrders = new ArrayList<>();
+
+    Collections.addAll(allOrders, orderImpl.getPreviousOrders(username));
+    Collections.reverse(allOrders);
+
+    JList<RestaurantApp.Order> allOrderList = new JList<>(allOrders.toArray(new RestaurantApp.Order[0]));
+    allOrderList.setCellRenderer(new RestaurantClient().new ClientOrderRenderer());
+    JScrollPane allScrollPane = new JScrollPane(allOrderList);
+
+    JLabel Active_Label = new JLabel("Active Order");
+    Active_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+    JPanel Client_Orders_Panel = new JPanel();
+    Client_Orders_Panel.setLayout(new BoxLayout(Client_Orders_Panel, BoxLayout.Y_AXIS));
+    Client_Orders_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+    if (activeOrder != null) {
+      JList<RestaurantApp.Order> activeOrderList = new JList<>(new RestaurantApp.Order[] { activeOrder });
+      activeOrderList.setCellRenderer(new RestaurantClient().new ClientOrderRenderer());
+      JScrollPane activeScrollPane = new JScrollPane(activeOrderList);
+
+      Client_Orders_Panel.add(Active_Label);
+      Client_Orders_Panel.add(activeScrollPane);
+
+      divisor = 2;
+
+    } else {
+      JLabel Non_Active_Label = new JLabel("No Active Orders");
+      Non_Active_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JButton Reorder_Button = new JButton("Reorder");
+      Reorder_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      Reorder_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          if (allOrderList.getSelectedIndex() != -1) {
+            try {
+              if (orderImpl.placeOrder(allOrderList.getSelectedValue())) {
+                JOptionPane.showMessageDialog(frame, "Order was successfully submitted.");
+                setClientOrderPage();
+              } else {
+                JOptionPane.showMessageDialog(frame, "There was an error with your order please try again.");
+              }
+            } catch (Empty_Order emptyOrderException) {
+              JOptionPane.showMessageDialog(frame, "We cannot accept an empty order please select some items.");
+            } catch (Menu_Too_Old menuTooOldException) {
+              JOptionPane.showMessageDialog(frame, "Our Menu has changed please refresh your menu and reorder.");
+            } catch (Incorrect_Order_Total incorrectOrderTotalException) {
+              JOptionPane.showMessageDialog(frame,
+                  "There was an issue calculating your total. Canceling transaction please try again.");
+            } catch (Order_In_Progess incorrectOrderTotalException) {
+              JOptionPane.showMessageDialog(frame,
+                  "You already have an order in progress, please wait until you have recieved that order before you place another.");
+            }
+          }
+        }
+      });
+
+      Client_Orders_Panel.add(Non_Active_Label);
+      Client_Orders_Panel.add(Reorder_Button);
+
+      divisor = 1;
+    }
+
+    JLabel All_Label = new JLabel("Past Orders");
+    All_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+    Client_Orders_Panel.add(All_Label);
+    Client_Orders_Panel.add(allScrollPane);
+
+    removeAllPanels();
+    frame.add(Client_Orders_Panel);
+    frame.setSize(
+        new Dimension(Client_Orders_Panel.getPreferredSize().width,
+            Client_Orders_Panel.getPreferredSize().height / divisor));
+    frame.revalidate();
+    frame.repaint();
+
   }
 
   public static void setAdminOrderPage() {
+
+    try {
+
+      ArrayList<RestaurantApp.Order> activeOrders = new ArrayList<>();
+      ArrayList<RestaurantApp.Order> allOrders = new ArrayList<>();
+
+      Collections.addAll(activeOrders, adminImpl.getAllActiveOrders(adminKey));
+      Collections.addAll(allOrders, adminImpl.getAllOrders(adminKey));
+
+      Collections.reverse(activeOrders);
+      Collections.reverse(allOrders);
+
+      JList<RestaurantApp.Order> activeOrderList = new JList<>(activeOrders.toArray(new RestaurantApp.Order[0]));
+      JList<RestaurantApp.Order> allOrderList = new JList<>(allOrders.toArray(new RestaurantApp.Order[0]));
+
+      activeOrderList.setCellRenderer(new RestaurantClient().new AdminOrderRenderer());
+      allOrderList.setCellRenderer(new RestaurantClient().new AdminOrderRenderer());
+
+      JScrollPane activeScrollPane = new JScrollPane(activeOrderList);
+      JScrollPane allScrollPane = new JScrollPane(allOrderList);
+
+      JLabel Active_Label = new JLabel("Active Orders");
+      JLabel All_Label = new JLabel("All Orders");
+      Active_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+      All_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      JPanel Admin_Orders_Panel = new JPanel();
+      Admin_Orders_Panel.setLayout(new BoxLayout(Admin_Orders_Panel, BoxLayout.Y_AXIS));
+      Admin_Orders_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Admin_Orders_Panel.add(Active_Label);
+      Admin_Orders_Panel.add(activeScrollPane);
+      Admin_Orders_Panel.add(All_Label);
+      Admin_Orders_Panel.add(allScrollPane);
+
+      removeAllPanels();
+      frame.add(Admin_Orders_Panel);
+      frame.setSize(
+          new Dimension(Admin_Orders_Panel.getPreferredSize().width, Admin_Orders_Panel.getPreferredSize().height / 2));
+      frame.revalidate();
+      frame.repaint();
+
+    } catch (Incorrect_Key incorrectKeyException) {
+      JOptionPane.showMessageDialog(frame, "You have an incorrect admin key please log out and log back in");
+    }
 
   }
 
@@ -435,15 +570,25 @@ public class RestaurantClient {
                 currentTime,
                 finishTime);
 
-            orderImpl.placeOrder(order);
-          } catch (Empty_Order e) {
+            if (orderImpl.placeOrder(order)) {
+              JOptionPane.showMessageDialog(frame, "Order was successfully submitted.");
+              setClientOrderPage();
+            } else {
+              JOptionPane.showMessageDialog(frame, "There was an error with your order please try again.");
+            }
+
+          } catch (Empty_Order emptyOrderException) {
             JOptionPane.showMessageDialog(frame, "We cannot accept an empty order please select some items.");
-          } catch (Menu_Too_Old f) {
+          } catch (Menu_Too_Old menuTooOldException) {
             JOptionPane.showMessageDialog(frame, "Our Menu has changed please refresh your menu and reorder.");
-          } catch (Incorrect_Order_Total g) {
+          } catch (Incorrect_Order_Total incorrectOrderTotalException) {
             JOptionPane.showMessageDialog(frame,
                 "There was an issue calculating your total. Canceling transaction please try again.");
+          } catch (Order_In_Progess incorrectOrderTotalException) {
+            JOptionPane.showMessageDialog(frame,
+                "You already have an order in progress, please wait until you have recieved that order before you place another.");
           }
+
         }
       });
 
@@ -467,7 +612,7 @@ public class RestaurantClient {
       frame.revalidate();
       frame.repaint();
 
-    } catch (No_Menu_Set e) {
+    } catch (No_Menu_Set noMenuSetException) {
       JOptionPane.showMessageDialog(frame, "No Menu has been set yet please contact the General Manager");
     }
 
@@ -560,13 +705,15 @@ public class RestaurantClient {
       if (value instanceof RestaurantApp.Order) {
         RestaurantApp.Order order = (RestaurantApp.Order) value;
 
-        String ret = "Order Time: " + timeToString(order.orderTime) + "\n";
-        ret += "Completion Time: " + timeToString(order.completionTime) + "\n";
-        ret += "Total Cost: $" + order.totalCost + "\n";
+        String ret = "Order Time: " + timeToString(order.orderTime) + "<br>";
+        ret += "Completion Time: " + timeToString(order.completionTime) + "<br>";
+        ret += "Total Cost: $" + order.totalCost + "<br>";
         for (RestaurantApp.OrderItem orderItem : order.orderList) {
-          ret += orderItem.quantity + " " + orderItem.item.food;
+          ret += orderItem.quantity + " " + orderItem.item.food + "<br>";
         }
-        setText(ret);
+
+        ret.replaceAll("\n", "<br>");
+        setText("<html>" + ret + "</html>");
       }
       return this;
     }
@@ -586,14 +733,15 @@ public class RestaurantClient {
       if (value instanceof RestaurantApp.Order) {
         RestaurantApp.Order order = (RestaurantApp.Order) value;
 
-        String ret = order.userId + "\n";
-        ret += "Order Time: " + timeToString(order.orderTime) + "\n";
-        ret += "Completion Time: " + timeToString(order.completionTime) + "\n";
-        ret += "Total Cost: $" + order.totalCost + "\n";
+        String ret = order.userId + "<br>";
+        ret += "Order Time: " + timeToString(order.orderTime) + "<br>";
+        ret += "Completion Time: " + timeToString(order.completionTime) + "<br>";
+        ret += "Total Cost: $" + order.totalCost + "<br>";
         for (RestaurantApp.OrderItem orderItem : order.orderList) {
-          ret += orderItem.quantity + " " + orderItem.item.food;
+          ret += orderItem.quantity + " " + orderItem.item.food + "<br>";
         }
-        setText(ret);
+
+        setText("<html>" + ret + "</html>");
       }
       return this;
     }

@@ -77,19 +77,18 @@ class AdminImpl extends Admin_IntPOA {
     ArrayList<RestaurantApp.Order> orders = new ArrayList<RestaurantApp.Order>();
 
     LocalDateTime currentTime = LocalDateTime.now();
-    RestaurantApp.Time compareTime = new RestaurantApp.Time(
-        (short) currentTime.getYear(),
-        (short) currentTime.getMonthValue(),
-        (short) currentTime.getDayOfMonth(),
-        (short) currentTime.getHour(),
-        (short) currentTime.getMinute());
 
     for (Order order : storage.orders) {
-      if (order.completionTime.year >= compareTime.year &&
-          order.completionTime.month >= compareTime.month &&
-          order.completionTime.day >= compareTime.day &&
-          order.completionTime.hours >= compareTime.hours &&
-          order.completionTime.minutes >= compareTime.minutes) {
+
+      LocalDateTime completionTime = LocalDateTime.of(
+          order.completionTime.year,
+          order.completionTime.month,
+          order.completionTime.day,
+          order.completionTime.hours,
+          order.completionTime.minutes,
+          0, 0);
+
+      if (completionTime.isAfter(currentTime)) {
         orders.add(order);
       }
     }
@@ -125,7 +124,7 @@ class OrderImpl extends Order_IntPOA {
   private ORB orb;
   private DataStorage storage;
 
-  private static final short orderDuration = 5;
+  private static final short orderDuration = 1;
 
   public void setORB(ORB orb_val) {
     orb = orb_val;
@@ -136,7 +135,8 @@ class OrderImpl extends Order_IntPOA {
   }
 
   // implement placeOrder() method
-  public boolean placeOrder(RestaurantApp.Order order) throws Empty_Order, Menu_Too_Old, Incorrect_Order_Total {
+  public boolean placeOrder(RestaurantApp.Order order)
+      throws Empty_Order, Menu_Too_Old, Incorrect_Order_Total, Order_In_Progess {
 
     if (order == null) {
       throw new Empty_Order();
@@ -152,7 +152,7 @@ class OrderImpl extends Order_IntPOA {
       for (RestaurantApp.OrderItem orderItem : order.orderList) {
         for (RestaurantApp.MenuItem menu_Item : storage.menu.menuList) {
           if (orderItem.item.food.equals(menu_Item.food)) {
-            tempCost += menu_Item.cost;
+            tempCost += menu_Item.cost * orderItem.quantity;
           }
         }
       }
@@ -168,36 +168,66 @@ class OrderImpl extends Order_IntPOA {
           (short) currentTime.getHour(),
           (short) currentTime.getMinute());
 
+      LocalDateTime newTime = currentTime.plusMinutes(orderDuration);
       RestaurantApp.Time completionTime = new RestaurantApp.Time(
-          orderTime.year,
-          orderTime.month,
-          orderTime.day,
-          orderTime.hours,
-          (short) (orderTime.minutes + orderDuration));
+          (short) newTime.getYear(),
+          (short) newTime.getMonthValue(),
+          (short) newTime.getDayOfMonth(),
+          (short) newTime.getHour(),
+          (short) newTime.getMinute());
 
-      storage.orders.add(new RestaurantApp.Order(
-          order.menuVersion,
-          order.orderList,
-          order.userId,
-          order.totalCost,
-          orderTime,
-          completionTime));
-      return true;
+      if (getLatestActiveOrder(order.userId) == null) {
+        storage.orders.add(new RestaurantApp.Order(
+            order.menuVersion,
+            order.orderList,
+            order.userId,
+            order.totalCost,
+            orderTime,
+            completionTime));
+        return true;
+      } else {
+        throw new Order_In_Progess();
+      }
+
     } else {
       throw new Incorrect_Order_Total();
     }
   }
 
-  // implement getActiveOrder() method
-  public RestaurantApp.Order getActiveOrder(String userId) {
+  private RestaurantApp.Order getLatestActiveOrder(String userId) {
+    LocalDateTime currentTime = LocalDateTime.now();
 
     for (int i = storage.orders.size() - 1; i >= 0; i--) {
       RestaurantApp.Order order = storage.orders.get(i);
       if (order.userId.equals(userId)) {
-        return order;
+        LocalDateTime completionTime = LocalDateTime.of(
+            order.completionTime.year,
+            order.completionTime.month,
+            order.completionTime.day,
+            order.completionTime.hours,
+            order.completionTime.minutes,
+            0, 0);
+
+        if (completionTime.isAfter(currentTime)) {
+          return order;
+        } else {
+          return null;
+        }
       }
     }
     return null;
+  }
+
+  // implement getActiveOrder() method
+  public RestaurantApp.Order getActiveOrder(String userId) throws No_Active_Order {
+    RestaurantApp.Order order = getLatestActiveOrder(userId);
+
+    if (order == null) {
+      throw new No_Active_Order();
+    }
+
+    return order;
+
   }
 
   // implement getPreviousOrders() method
