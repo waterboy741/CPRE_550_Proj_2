@@ -3,3 +3,9 @@ javac *.java RestaurantApp/*.java
 orbd -ORBInitialPort 1050
 java RestaurantServer -ORBInitialPort 1050 -ORBInitialHost localhost
 java RestaurantClient -ORBInitialPort 1050 -ORBInitialHost localhost
+
+jar cfe RestaurantServer.jar RestaurantServer .
+jar cfe RestaurantClient.jar RestaurantClient .
+
+java -jar RestaurantServer.jar -ORBInitialPort 1050 -ORBInitialHost localhost
+java -jar RestaurantClient.jar -ORBInitialPort 1050 -ORBInitialHost localhost
