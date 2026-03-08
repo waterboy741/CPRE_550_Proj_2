@@ -38,6 +38,7 @@ public class RestaurantClient {
   static short menuVersion;
 
   static DefaultListModel<RestaurantApp.OrderItem> clientMenuListModel;
+  static DefaultListModel<RestaurantApp.MenuItem> adminMenuListModel;
 
   public static void main(String args[]) {
     try {
@@ -120,7 +121,7 @@ public class RestaurantClient {
 
   public static void createMenuBar() {
     JMenuBar menuBar = new JMenuBar();
-    JMenu menu = new JMenu("Login");
+    JMenu menu = new JMenu("Select Login");
     JMenuItem adminItem = new JMenuItem("Admin");
     JMenuItem clientItem = new JMenuItem("Client");
     menu.add(clientItem);
@@ -157,7 +158,7 @@ public class RestaurantClient {
   }
 
   public static void createClientMenu() {
-    JMenu clientMenu = new JMenu("Client");
+    JMenu clientMenu = new JMenu("Select Client Page");
     JMenuItem orderItem = new JMenuItem("Orders");
     JMenuItem menuItem = new JMenuItem("Menu");
     clientMenu.add(orderItem);
@@ -184,7 +185,7 @@ public class RestaurantClient {
   }
 
   public static void createAdminMenu() {
-    JMenu adminMenu = new JMenu("Admin");
+    JMenu adminMenu = new JMenu("Select Admin Page");
     JMenuItem orderItem = new JMenuItem("Orders");
     JMenuItem menuItem = new JMenuItem("Menu");
     adminMenu.add(orderItem);
@@ -233,7 +234,7 @@ public class RestaurantClient {
     Login_Button.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        ClientLogin(Login_First_Field.getText().trim() + Login_Last_Field.getText().trim());
+        ClientLogin(Login_First_Field.getText().trim() + " " + Login_Last_Field.getText().trim());
       }
     });
 
@@ -619,7 +620,116 @@ public class RestaurantClient {
   }
 
   public static void setAdminMenuPage() {
+    try {
+      RestaurantApp.Menu menu = menuImpl.getMenu();
+      menuVersion = menu.version;
 
+      adminMenuListModel = new DefaultListModel<>();
+      JList<RestaurantApp.MenuItem> menuList = new JList<>(adminMenuListModel);
+      menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
+      JScrollPane menuScrollPane = new JScrollPane(menuList);
+
+      for (RestaurantApp.MenuItem item : menu.menuList) {
+        adminMenuListModel.addElement(item);
+      }
+
+      JLabel Current_Menu_Label = new JLabel("Currnet Menu");
+
+      JLabel Food_Label = new JLabel("Food:  ");
+      JTextField Food_Field = new JTextField("", 10);
+      JLabel Cost_Label = new JLabel("Cost: $");
+      JTextField Cost_Field = new JTextField("", 10);
+
+      JPanel Food_Panel = new JPanel();
+      Food_Panel.setLayout(new BoxLayout(Food_Panel, BoxLayout.X_AXIS));
+      Food_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Food_Panel.add(Food_Label);
+      Food_Panel.add(Food_Field);
+
+      JPanel Cost_Panel = new JPanel();
+      Cost_Panel.setLayout(new BoxLayout(Cost_Panel, BoxLayout.X_AXIS));
+      Cost_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Cost_Panel.add(Cost_Label);
+      Cost_Panel.add(Cost_Field);
+
+      JButton Add_Button = new JButton("Add");
+      JButton Remove_Button = new JButton("Remove");
+      Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+      Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      Add_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          try {
+            RestaurantApp.MenuItem menuItem = new RestaurantApp.MenuItem(Food_Field.getText(),
+                (short) Integer.parseInt(Cost_Field.getText()));
+            adminMenuListModel.addElement(menuItem);
+          } catch (NumberFormatException badCostException) {
+            JOptionPane.showMessageDialog(frame, "Invalid Cost");
+          }
+        }
+      });
+
+      Remove_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
+          if (menuItem != null) {
+            adminMenuListModel.removeElement(menuItem);
+          }
+        }
+      });
+
+      JPanel Button_Panel = new JPanel();
+      Button_Panel.setLayout(new BoxLayout(Button_Panel, BoxLayout.X_AXIS));
+      Button_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Button_Panel.add(Add_Button);
+      Button_Panel.add(Remove_Button);
+
+      JButton Set_Menu_Button = new JButton("Set Menu");
+      Set_Menu_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+      Set_Menu_Button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+          ArrayList<RestaurantApp.MenuItem> menuItems = new ArrayList<>();
+
+          for (int i = 0; i < adminMenuListModel.size(); i++) {
+            menuItems.add(adminMenuListModel.getElementAt(i));
+          }
+
+          try {
+            if (adminImpl.setMenu(menuItems.toArray(new RestaurantApp.MenuItem[0]), adminKey)) {
+              JOptionPane.showMessageDialog(frame, "Menu has been updated");
+            } else {
+              JOptionPane.showMessageDialog(frame, "There was an error updating the menu please try again");
+            }
+          } catch (Incorrect_Key incorrectKeyException) {
+            JOptionPane.showMessageDialog(frame, "You have an incorrect admin key please log out and log back in");
+          }
+        }
+      });
+
+      JPanel Menu_Panel = new JPanel();
+      Menu_Panel.setLayout(new BoxLayout(Menu_Panel, BoxLayout.Y_AXIS));
+      Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      Menu_Panel.add(Current_Menu_Label);
+      Menu_Panel.add(menuScrollPane);
+      Menu_Panel.add(Food_Panel);
+      Menu_Panel.add(Cost_Panel);
+      Menu_Panel.add(Button_Panel);
+      Menu_Panel.add(Set_Menu_Button);
+
+      removeAllPanels();
+      frame.add(Menu_Panel);
+      frame.setSize(Menu_Panel.getPreferredSize());
+      frame.revalidate();
+      frame.repaint();
+
+    } catch (No_Menu_Set noMenuSetException) {
+      JOptionPane.showMessageDialog(frame, "No Menu has been set yet please contact the General Manager");
+    }
   }
 
   public static void ClientLogin(String name) {
@@ -711,8 +821,8 @@ public class RestaurantClient {
         for (RestaurantApp.OrderItem orderItem : order.orderList) {
           ret += orderItem.quantity + " " + orderItem.item.food + "<br>";
         }
+        ret += "------------------------------------------------<br>";
 
-        ret.replaceAll("\n", "<br>");
         setText("<html>" + ret + "</html>");
       }
       return this;
@@ -740,6 +850,7 @@ public class RestaurantClient {
         for (RestaurantApp.OrderItem orderItem : order.orderList) {
           ret += orderItem.quantity + " " + orderItem.item.food + "<br>";
         }
+        ret += "------------------------------------------------<br>";
 
         setText("<html>" + ret + "</html>");
       }
