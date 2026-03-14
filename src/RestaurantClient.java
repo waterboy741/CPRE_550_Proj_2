@@ -474,7 +474,7 @@ public class RestaurantClient {
       @Override
       public void actionPerformed(ActionEvent e) {
         int quantity = Integer.parseInt(Quantity_Label.getText());
-        if (quantity > 0) {
+        if (quantity > 1) {
           quantity--;
         }
         Quantity_Label.setText("" + quantity);
