@@ -439,297 +439,288 @@ public class RestaurantClient {
 
   public static void setClientMenuPage() {
 
-    try {
+    RestaurantApp.Menu menu = menuImpl.menu();
+    menuVersion = menu.version;
 
-      RestaurantApp.Menu menu = menuImpl.getMenu();
-      menuVersion = menu.version;
+    JList<RestaurantApp.MenuItem> menuList = new JList<>(menu.menuList);
+    menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
+    JScrollPane menuScrollPane = new JScrollPane(menuList);
 
-      JList<RestaurantApp.MenuItem> menuList = new JList<>(menu.menuList);
-      menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
-      JScrollPane menuScrollPane = new JScrollPane(menuList);
+    clientMenuListModel = new DefaultListModel<>();
+    JList<RestaurantApp.OrderItem> menuOrderList = new JList<>(clientMenuListModel);
+    menuOrderList.setCellRenderer(new RestaurantClient().new orderItemRenderer());
+    JScrollPane orderScrollPane = new JScrollPane(menuOrderList);
 
-      clientMenuListModel = new DefaultListModel<>();
-      JList<RestaurantApp.OrderItem> menuOrderList = new JList<>(clientMenuListModel);
-      menuOrderList.setCellRenderer(new RestaurantClient().new orderItemRenderer());
-      JScrollPane orderScrollPane = new JScrollPane(menuOrderList);
+    JLabel Quantity_Label = new JLabel("1");
+    Quantity_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      JLabel Quantity_Label = new JLabel("1");
-      Quantity_Label.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JButton Up_Button = new JButton("^");
+    JButton Down_Button = new JButton("v");
+    Up_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Down_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      JButton Up_Button = new JButton("^");
-      JButton Down_Button = new JButton("v");
-      Up_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-      Down_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-      Up_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          int quantity = Integer.parseInt(Quantity_Label.getText());
-          if (quantity < 10) {
-            quantity++;
-          }
-          Quantity_Label.setText("" + quantity);
+    Up_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        int quantity = Integer.parseInt(Quantity_Label.getText());
+        if (quantity < 10) {
+          quantity++;
         }
-      });
+        Quantity_Label.setText("" + quantity);
+      }
+    });
 
-      Down_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          int quantity = Integer.parseInt(Quantity_Label.getText());
-          if (quantity > 0) {
-            quantity--;
-          }
-          Quantity_Label.setText("" + quantity);
+    Down_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        int quantity = Integer.parseInt(Quantity_Label.getText());
+        if (quantity > 0) {
+          quantity--;
         }
-      });
+        Quantity_Label.setText("" + quantity);
+      }
+    });
 
-      JPanel Up_Down_Panel = new JPanel();
+    JPanel Up_Down_Panel = new JPanel();
 
-      Up_Down_Panel.setLayout(new BoxLayout(Up_Down_Panel, BoxLayout.Y_AXIS));
-      Up_Down_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Up_Down_Panel.add(Up_Button);
-      Up_Down_Panel.add(Down_Button);
-      Up_Down_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Up_Down_Panel.setLayout(new BoxLayout(Up_Down_Panel, BoxLayout.Y_AXIS));
+    Up_Down_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Up_Down_Panel.add(Up_Button);
+    Up_Down_Panel.add(Down_Button);
+    Up_Down_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      JLabel Cost_Label = new JLabel("Total Cost: $");
+    JLabel Cost_Label = new JLabel("Total Cost: $");
 
-      JButton Add_Button = new JButton("Add");
-      JButton Remove_Button = new JButton("Remove");
-      Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-      Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JButton Add_Button = new JButton("Add");
+    JButton Remove_Button = new JButton("Remove");
+    Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      Add_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
-          if (menuItem != null) {
-            RestaurantApp.OrderItem orderItem = new RestaurantApp.OrderItem(menuItem,
-                (short) Integer.parseInt(Quantity_Label.getText()));
-            clientMenuListModel.addElement(orderItem);
+    Add_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
+        if (menuItem != null) {
+          RestaurantApp.OrderItem orderItem = new RestaurantApp.OrderItem(menuItem,
+              (short) Integer.parseInt(Quantity_Label.getText()));
+          clientMenuListModel.addElement(orderItem);
 
-            int cost = 0;
-            for (int i = 0; i < clientMenuListModel.size(); i++) {
-              cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
-            }
-            Cost_Label.setText("Total Cost: $" + cost);
+          int cost = 0;
+          for (int i = 0; i < clientMenuListModel.size(); i++) {
+            cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
           }
+          Cost_Label.setText("Total Cost: $" + cost);
         }
-      });
+      }
+    });
 
-      Remove_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          RestaurantApp.OrderItem orderItem = menuOrderList.getSelectedValue();
-          if (orderItem != null) {
-            clientMenuListModel.removeElement(orderItem);
+    Remove_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        RestaurantApp.OrderItem orderItem = menuOrderList.getSelectedValue();
+        if (orderItem != null) {
+          clientMenuListModel.removeElement(orderItem);
 
-            int cost = 0;
-            for (int i = 0; i < clientMenuListModel.size(); i++) {
-              cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
-            }
-            Cost_Label.setText("Total Cost: $" + cost);
+          int cost = 0;
+          for (int i = 0; i < clientMenuListModel.size(); i++) {
+            cost += (clientMenuListModel.getElementAt(i).item.cost * clientMenuListModel.getElementAt(i).quantity);
           }
+          Cost_Label.setText("Total Cost: $" + cost);
         }
-      });
+      }
+    });
 
-      JPanel Add_Remove_Panel = new JPanel();
+    JPanel Add_Remove_Panel = new JPanel();
 
-      Add_Remove_Panel.setLayout(new BoxLayout(Add_Remove_Panel, BoxLayout.Y_AXIS));
-      Add_Remove_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Add_Remove_Panel.add(Add_Button);
-      Add_Remove_Panel.add(Remove_Button);
-      Add_Remove_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Add_Remove_Panel.setLayout(new BoxLayout(Add_Remove_Panel, BoxLayout.Y_AXIS));
+    Add_Remove_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Add_Remove_Panel.add(Add_Button);
+    Add_Remove_Panel.add(Remove_Button);
+    Add_Remove_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      JPanel Order_Creation_Panel = new JPanel();
-      Order_Creation_Panel.setLayout(new BoxLayout(Order_Creation_Panel, BoxLayout.X_AXIS));
-      Order_Creation_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Order_Creation_Panel.add(Up_Down_Panel);
-      Order_Creation_Panel.add(Quantity_Label);
-      Order_Creation_Panel.add(Add_Remove_Panel);
-      Order_Creation_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JPanel Order_Creation_Panel = new JPanel();
+    Order_Creation_Panel.setLayout(new BoxLayout(Order_Creation_Panel, BoxLayout.X_AXIS));
+    Order_Creation_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Order_Creation_Panel.add(Up_Down_Panel);
+    Order_Creation_Panel.add(Quantity_Label);
+    Order_Creation_Panel.add(Add_Remove_Panel);
+    Order_Creation_Panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-      JButton Order_Button = new JButton("Order");
+    JButton Order_Button = new JButton("Order");
 
-      Order_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          try {
-            ArrayList<RestaurantApp.OrderItem> list = new ArrayList<>();
-            int cost = 0;
-            for (int i = 0; i < clientMenuListModel.size(); i++) {
-              RestaurantApp.OrderItem item = clientMenuListModel.getElementAt(i);
-              list.add(item);
-              cost += (item.item.cost * item.quantity);
-            }
-
-            RestaurantApp.Time currentTime = new RestaurantApp.Time();
-            RestaurantApp.Time finishTime = new RestaurantApp.Time();
-
-            RestaurantApp.Order order = new RestaurantApp.Order(menuVersion,
-                list.toArray(new RestaurantApp.OrderItem[0]),
-                username, (short) cost,
-                currentTime,
-                finishTime);
-
-            if (orderImpl.placeOrder(order)) {
-              JOptionPane.showMessageDialog(frame, "Order was successfully submitted.");
-              setClientOrderPage();
-            } else {
-              JOptionPane.showMessageDialog(frame, "There was an error with your order please try again.");
-            }
-
-          } catch (Empty_Order emptyOrderException) {
-            JOptionPane.showMessageDialog(frame, "We cannot accept an empty order please select some items.");
-          } catch (Menu_Too_Old menuTooOldException) {
-            JOptionPane.showMessageDialog(frame, "Our Menu has changed please refresh your menu and reorder.");
-          } catch (Incorrect_Order_Total incorrectOrderTotalException) {
-            JOptionPane.showMessageDialog(frame,
-                "There was an issue calculating your total. Canceling transaction please try again.");
-          } catch (Order_In_Progess incorrectOrderTotalException) {
-            JOptionPane.showMessageDialog(frame,
-                "You already have an order in progress, please wait until you have recieved that order before you place another.");
+    Order_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        try {
+          ArrayList<RestaurantApp.OrderItem> list = new ArrayList<>();
+          int cost = 0;
+          for (int i = 0; i < clientMenuListModel.size(); i++) {
+            RestaurantApp.OrderItem item = clientMenuListModel.getElementAt(i);
+            list.add(item);
+            cost += (item.item.cost * item.quantity);
           }
 
+          RestaurantApp.Time currentTime = new RestaurantApp.Time();
+          RestaurantApp.Time finishTime = new RestaurantApp.Time();
+
+          RestaurantApp.Order order = new RestaurantApp.Order(menuVersion,
+              list.toArray(new RestaurantApp.OrderItem[0]),
+              username, (short) cost,
+              currentTime,
+              finishTime);
+
+          if (orderImpl.placeOrder(order)) {
+            JOptionPane.showMessageDialog(frame, "Order was successfully submitted.");
+            setClientOrderPage();
+          } else {
+            JOptionPane.showMessageDialog(frame, "There was an error with your order please try again.");
+          }
+
+        } catch (Empty_Order emptyOrderException) {
+          JOptionPane.showMessageDialog(frame, "We cannot accept an empty order please select some items.");
+        } catch (Menu_Too_Old menuTooOldException) {
+          JOptionPane.showMessageDialog(frame, "Our Menu has changed please refresh your menu and reorder.");
+        } catch (Incorrect_Order_Total incorrectOrderTotalException) {
+          JOptionPane.showMessageDialog(frame,
+              "There was an issue calculating your total. Canceling transaction please try again.");
+        } catch (Order_In_Progess incorrectOrderTotalException) {
+          JOptionPane.showMessageDialog(frame,
+              "You already have an order in progress, please wait until you have recieved that order before you place another.");
         }
-      });
 
-      JPanel Order_Panel = new JPanel();
-      Order_Panel.setLayout(new BoxLayout(Order_Panel, BoxLayout.Y_AXIS));
-      Order_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Order_Panel.add(orderScrollPane);
-      Order_Panel.add(Order_Creation_Panel);
-      Order_Panel.add(Cost_Label);
-      Order_Panel.add(Order_Button);
+      }
+    });
 
-      JPanel Client_Menu_Panel = new JPanel();
-      Client_Menu_Panel.setLayout(new BoxLayout(Client_Menu_Panel, BoxLayout.X_AXIS));
-      Client_Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Client_Menu_Panel.add(menuScrollPane);
-      Client_Menu_Panel.add(Order_Panel);
+    JPanel Order_Panel = new JPanel();
+    Order_Panel.setLayout(new BoxLayout(Order_Panel, BoxLayout.Y_AXIS));
+    Order_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Order_Panel.add(orderScrollPane);
+    Order_Panel.add(Order_Creation_Panel);
+    Order_Panel.add(Cost_Label);
+    Order_Panel.add(Order_Button);
 
-      removeAllPanels();
-      frame.add(Client_Menu_Panel);
-      frame.setSize(Client_Menu_Panel.getPreferredSize());
-      frame.revalidate();
-      frame.repaint();
+    JPanel Client_Menu_Panel = new JPanel();
+    Client_Menu_Panel.setLayout(new BoxLayout(Client_Menu_Panel, BoxLayout.X_AXIS));
+    Client_Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Client_Menu_Panel.add(menuScrollPane);
+    Client_Menu_Panel.add(Order_Panel);
 
-    } catch (No_Menu_Set noMenuSetException) {
-      JOptionPane.showMessageDialog(frame, "No Menu has been set yet please contact the General Manager");
-    }
+    removeAllPanels();
+    frame.add(Client_Menu_Panel);
+    frame.setSize(Client_Menu_Panel.getPreferredSize());
+    frame.revalidate();
+    frame.repaint();
 
   }
 
   public static void setAdminMenuPage() {
-    try {
-      RestaurantApp.Menu menu = menuImpl.getMenu();
-      menuVersion = menu.version;
 
-      adminMenuListModel = new DefaultListModel<>();
-      JList<RestaurantApp.MenuItem> menuList = new JList<>(adminMenuListModel);
-      menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
-      JScrollPane menuScrollPane = new JScrollPane(menuList);
+    RestaurantApp.Menu menu = menuImpl.menu();
+    menuVersion = menu.version;
 
-      for (RestaurantApp.MenuItem item : menu.menuList) {
-        adminMenuListModel.addElement(item);
-      }
+    adminMenuListModel = new DefaultListModel<>();
+    JList<RestaurantApp.MenuItem> menuList = new JList<>(adminMenuListModel);
+    menuList.setCellRenderer(new RestaurantClient().new menuItemRenderer());
+    JScrollPane menuScrollPane = new JScrollPane(menuList);
 
-      JLabel Current_Menu_Label = new JLabel("Currnet Menu");
-
-      JLabel Food_Label = new JLabel("Food:  ");
-      JTextField Food_Field = new JTextField("", 10);
-      JLabel Cost_Label = new JLabel("Cost: $");
-      JTextField Cost_Field = new JTextField("", 10);
-
-      JPanel Food_Panel = new JPanel();
-      Food_Panel.setLayout(new BoxLayout(Food_Panel, BoxLayout.X_AXIS));
-      Food_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Food_Panel.add(Food_Label);
-      Food_Panel.add(Food_Field);
-
-      JPanel Cost_Panel = new JPanel();
-      Cost_Panel.setLayout(new BoxLayout(Cost_Panel, BoxLayout.X_AXIS));
-      Cost_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Cost_Panel.add(Cost_Label);
-      Cost_Panel.add(Cost_Field);
-
-      JButton Add_Button = new JButton("Add");
-      JButton Remove_Button = new JButton("Remove");
-      Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-      Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-      Add_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          try {
-            RestaurantApp.MenuItem menuItem = new RestaurantApp.MenuItem(Food_Field.getText(),
-                (short) Integer.parseInt(Cost_Field.getText()));
-            adminMenuListModel.addElement(menuItem);
-          } catch (NumberFormatException badCostException) {
-            JOptionPane.showMessageDialog(frame, "Invalid Cost");
-          }
-        }
-      });
-
-      Remove_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
-          if (menuItem != null) {
-            adminMenuListModel.removeElement(menuItem);
-          }
-        }
-      });
-
-      JPanel Button_Panel = new JPanel();
-      Button_Panel.setLayout(new BoxLayout(Button_Panel, BoxLayout.X_AXIS));
-      Button_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Button_Panel.add(Add_Button);
-      Button_Panel.add(Remove_Button);
-
-      JButton Set_Menu_Button = new JButton("Set Menu");
-      Set_Menu_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-      Set_Menu_Button.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-
-          ArrayList<RestaurantApp.MenuItem> menuItems = new ArrayList<>();
-
-          for (int i = 0; i < adminMenuListModel.size(); i++) {
-            menuItems.add(adminMenuListModel.getElementAt(i));
-          }
-
-          try {
-            if (adminImpl.setMenu(menuItems.toArray(new RestaurantApp.MenuItem[0]), adminKey)) {
-              JOptionPane.showMessageDialog(frame, "Menu has been updated");
-            } else {
-              JOptionPane.showMessageDialog(frame, "There was an error updating the menu please try again");
-            }
-          } catch (Incorrect_Key incorrectKeyException) {
-            JOptionPane.showMessageDialog(frame, "You have an incorrect admin key please log out and log back in");
-          }
-        }
-      });
-
-      JPanel Menu_Panel = new JPanel();
-      Menu_Panel.setLayout(new BoxLayout(Menu_Panel, BoxLayout.Y_AXIS));
-      Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-      Menu_Panel.add(Current_Menu_Label);
-      Menu_Panel.add(menuScrollPane);
-      Menu_Panel.add(Food_Panel);
-      Menu_Panel.add(Cost_Panel);
-      Menu_Panel.add(Button_Panel);
-      Menu_Panel.add(Set_Menu_Button);
-
-      removeAllPanels();
-      frame.add(Menu_Panel);
-      frame.setSize(Menu_Panel.getPreferredSize());
-      frame.revalidate();
-      frame.repaint();
-
-    } catch (No_Menu_Set noMenuSetException) {
-      JOptionPane.showMessageDialog(frame, "No Menu has been set yet please contact the General Manager");
+    for (RestaurantApp.MenuItem item : menu.menuList) {
+      adminMenuListModel.addElement(item);
     }
+
+    JLabel Current_Menu_Label = new JLabel("Currnet Menu");
+
+    JLabel Food_Label = new JLabel("Food:  ");
+    JTextField Food_Field = new JTextField("", 10);
+    JLabel Cost_Label = new JLabel("Cost: $");
+    JTextField Cost_Field = new JTextField("", 10);
+
+    JPanel Food_Panel = new JPanel();
+    Food_Panel.setLayout(new BoxLayout(Food_Panel, BoxLayout.X_AXIS));
+    Food_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Food_Panel.add(Food_Label);
+    Food_Panel.add(Food_Field);
+
+    JPanel Cost_Panel = new JPanel();
+    Cost_Panel.setLayout(new BoxLayout(Cost_Panel, BoxLayout.X_AXIS));
+    Cost_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Cost_Panel.add(Cost_Label);
+    Cost_Panel.add(Cost_Field);
+
+    JButton Add_Button = new JButton("Add");
+    JButton Remove_Button = new JButton("Remove");
+    Add_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Remove_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+    Add_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        try {
+          RestaurantApp.MenuItem menuItem = new RestaurantApp.MenuItem(Food_Field.getText(),
+              (short) Integer.parseInt(Cost_Field.getText()));
+          adminMenuListModel.addElement(menuItem);
+        } catch (NumberFormatException badCostException) {
+          JOptionPane.showMessageDialog(frame, "Invalid Cost");
+        }
+      }
+    });
+
+    Remove_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        RestaurantApp.MenuItem menuItem = menuList.getSelectedValue();
+        if (menuItem != null) {
+          adminMenuListModel.removeElement(menuItem);
+        }
+      }
+    });
+
+    JPanel Button_Panel = new JPanel();
+    Button_Panel.setLayout(new BoxLayout(Button_Panel, BoxLayout.X_AXIS));
+    Button_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Button_Panel.add(Add_Button);
+    Button_Panel.add(Remove_Button);
+
+    JButton Set_Menu_Button = new JButton("Set Menu");
+    Set_Menu_Button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+    Set_Menu_Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+
+        ArrayList<RestaurantApp.MenuItem> menuItems = new ArrayList<>();
+
+        for (int i = 0; i < adminMenuListModel.size(); i++) {
+          menuItems.add(adminMenuListModel.getElementAt(i));
+        }
+
+        try {
+          if (adminImpl.setMenu(menuItems.toArray(new RestaurantApp.MenuItem[0]), adminKey)) {
+            JOptionPane.showMessageDialog(frame, "Menu has been updated");
+          } else {
+            JOptionPane.showMessageDialog(frame, "There was an error updating the menu please try again");
+          }
+        } catch (Incorrect_Key incorrectKeyException) {
+          JOptionPane.showMessageDialog(frame, "You have an incorrect admin key please log out and log back in");
+        }
+      }
+    });
+
+    JPanel Menu_Panel = new JPanel();
+    Menu_Panel.setLayout(new BoxLayout(Menu_Panel, BoxLayout.Y_AXIS));
+    Menu_Panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    Menu_Panel.add(Current_Menu_Label);
+    Menu_Panel.add(menuScrollPane);
+    Menu_Panel.add(Food_Panel);
+    Menu_Panel.add(Cost_Panel);
+    Menu_Panel.add(Button_Panel);
+    Menu_Panel.add(Set_Menu_Button);
+
+    removeAllPanels();
+    frame.add(Menu_Panel);
+    frame.setSize(Menu_Panel.getPreferredSize());
+    frame.revalidate();
+    frame.repaint();
+
   }
 
   public static void ClientLogin(String name) {

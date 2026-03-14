@@ -58,11 +58,12 @@ module RestaurantApp
 
   interface Menu_Int
   {
-    Menu getMenu() raises (No_Menu_Set);
+    attribute Menu menu;
   };
   
   interface Order_Int
   {
+    attribute OrdersList orders;
     boolean placeOrder(in Order order) raises (Empty_Order, Menu_Too_Old, Incorrect_Order_Total, Order_In_Progess);
     Order getActiveOrder(in string userId) raises (No_Active_Order);
     OrdersList getPreviousOrders(in string userId);

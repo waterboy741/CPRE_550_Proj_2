@@ -7,7 +7,4 @@ RUN sudo dnf install -y adoptium-temurin-java-repository
 RUN sudo fedora-third-party enable
 RUN sudo dnf install -y temurin-8-jdk.x86_64
 
-# java-1.8.0-openjdk-devel.x86_64
-
-USER vscode
 USER root
