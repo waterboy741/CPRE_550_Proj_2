@@ -5,7 +5,12 @@ services:
   client1:
     image: willgalles/corba_container:latest
     environment:
-      DISPLAY: :1
+      # This needs to be changed to match your machine
+      # I was having a tough time getting the diplay X server
+      # is using dynamically
+      # The number can be found with 
+      # cd /tmp/.X11-unix && for x in X*; do echo ":${x#X}"; done | tail -n 1
+      DISPLAY: :7
     volumes: 
       - type: bind
         source: /tmp/.X11-unix
@@ -15,7 +20,12 @@ services:
   client2:
     image: willgalles/corba_container:latest
     environment:
-      DISPLAY: :1
+      # This needs to be changed to match your machine
+      # I was having a tough time getting the diplay X server
+      # is using dynamically
+      # The number can be found with 
+      # cd /tmp/.X11-unix && for x in X*; do echo ":${x#X}"; done | tail -n 1
+      DISPLAY: :7
     volumes: 
       - type: bind
         source: /tmp/.X11-unix
