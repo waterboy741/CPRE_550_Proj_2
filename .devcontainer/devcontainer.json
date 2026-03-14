@@ -7,7 +7,7 @@
 	// "runArgs": ["--network=host"],
 	"runArgs": ["--memory=4g"],
 	"mounts": [
-        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached"
       ],
 	"customizations": {
 		"vscode": {

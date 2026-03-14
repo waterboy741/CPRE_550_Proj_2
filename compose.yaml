@@ -1,0 +1,23 @@
+services:
+  server:
+    image: willgalles/corba_container:latest
+
+  client1:
+    image: willgalles/corba_container:latest
+    environment:
+      DISPLAY: :1
+    volumes: 
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+        consistency: cached
+        
+  client2:
+    image: willgalles/corba_container:latest
+    environment:
+      DISPLAY: :1
+    volumes: 
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+        consistency: cached

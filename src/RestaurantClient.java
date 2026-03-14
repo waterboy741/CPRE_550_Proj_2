@@ -60,9 +60,6 @@ public class RestaurantClient {
       menuImpl = Menu_IntHelper.narrow(ncRef.resolve_str(menuName));
       orderImpl = Order_IntHelper.narrow(ncRef.resolve_str(orderName));
 
-      // ==================================================================
-
-      // Create the main frame
       frame = new JFrame("Will's Resturnat");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       frame.setMaximumSize(new Dimension(1920 / 2, 1080 / 2));
@@ -72,39 +69,6 @@ public class RestaurantClient {
       createMenuBar();
 
       frame.setVisible(true);
-
-      // ==================================================================
-
-      //
-      ///
-      /// ///
-      ///
-      ///
-      ///
-      ///
-      ///
-      ///
-      ///
-
-      // // Create a panel with a button
-      // JPanel panel = new JPanel();
-      // JButton button = new JButton("Click Me");
-      // panel.add(button);
-
-      // RestaurantApp.Menu menu = menuImpl.getMenu();
-      // System.out.println("Initial Version");
-      // System.out.println(menu.version);
-      // for (RestaurantApp.MenuItem item : menu.menuList) {
-      // System.out.println(item.food);
-      // System.out.println(item.cost);
-      // }
-
-      // System.out.println(adminImpl.setMenu(menu.menuList,
-      // adminImpl.getAdminKey("admin", "password")));
-      // System.out.println("New Version");
-      // System.out.println(menuImpl.getMenu().version);
-
-      // ==================================================================
 
     } catch (Exception e) {
       System.out.println("ERROR : " + e);
